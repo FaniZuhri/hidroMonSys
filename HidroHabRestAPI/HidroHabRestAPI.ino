@@ -3,9 +3,6 @@
 #include "DFRobot_ESP_EC.h"
 #include <EEPROM.h>
 #include <WiFi.h> // Include the Wi-Fi library
-#include <PubSubClient.h>
-#include "GravityTDS.h"
-//#include "DFRobot_PH.h"
 #include "DFRobot_ESP_PH_WITH_ADC.h"
 #include <Wire.h>
 #include <BH1750.h>
@@ -28,7 +25,7 @@ BH1750 lightMeter(0x23);
 
 const char *ssid = "Your SSID";
 const char *password = "Your Password";
-String sn = "2020110001", tanggal = "20165-165-165", waktu = "45:165:85", tanggal_ordered, waktu_ordered;
+String sn = "2020110001", tanggal = "20165-165-165", waktu = "45:165:85";
 char c;
 
 /************************* EC  and PH Initialization **************************/
@@ -53,14 +50,9 @@ SHT2x SHT2x;
 
 WiFiClient espClient;
 WiFiServer server(80);
-PubSubClient client(espClient);
-unsigned long lastMsg = 0;
-#define MSG_BUFFER_SIZE (100)
-char msg[MSG_BUFFER_SIZE];
 
-float phValue = 0, reservoir_temp, tdsValue, hum, vol, ecValue, voltage, voltage1, temperature, temp = 25;
-int i = 1, t, TDS_coef, dis_sum, firstLoop = 1, n, gy, a = 1, b = 1, d = 1, e = 1, lux;
-int pHrelaypin = 33, TDSrelaypin = 25, samplingrelay = 26, pomparelay = 33, h;
+float phValue = 0, phValue2 = 0, reservoir_temp, tdsValue, hum, vol, vol2 = 0, ecValue, voltage, voltage1, temperature, temp = 25;
+int pHrelaypin = 33, TDSrelaypin = 25, samplingrelay = 26, pomparelay = 33, i = 1, lux;
 
 //Temperature chip i/o
 #define ONE_WIRE_BUS 15
@@ -137,7 +129,7 @@ void loop()
 {
   displayLcd();
   delay(1000);
-  for (gy = 1; gy < 5; gy++)
+  for (i = 1; i < 5; i++)
   {
     read_BH();
     delay(250);
@@ -145,8 +137,8 @@ void loop()
 
   readSHT();
   delay(1000);
-
-  for (e = 1; e < 9; e++)
+  i = 1;
+  for (i = 1; i < 9; i++)
   {
     read_JSN();
     delay(250);
@@ -161,8 +153,8 @@ void loop()
 
   relay(1, 0, 1);
   delay(1000);
-
-  for (d = 1; d < 41; d++)
+  i = 1;
+  for (i = 1; i < 41; i++)
   {
     static unsigned long timepoint = millis();
     if (millis() - timepoint > 1000U) //time interval: 1s
@@ -196,8 +188,8 @@ void loop()
 
   relay(0, 1, 1);
   delay(1000);
-
-  for (b = 1; b < 41; b++)
+  i = 1;
+  for (i = 1; i < 41; i++)
   {
     static unsigned long timepoint = millis();
     if (millis() - timepoint > 1000U) //time interval: 1s
@@ -215,6 +207,14 @@ void loop()
 
       phValue = ph.readPH(voltage, temp); // convert voltage to pH with temperature compensation
       phValue = phValue + 0.8;
+      if (phValue >= 8)
+      {
+        phValue = phValue2;
+      }
+      else
+      {
+        phValue2 = phValue;
+      }
       Serial.print("pH:");
       Serial.println(phValue, 4);
       displayLcd();
@@ -418,6 +418,14 @@ void read_JSN()
   // Send ping, get distance in cm and print result (0 = outside set distance range):
   vol = sonar.ping_cm();
   vol = 120 - vol;
+  if (vol >= 120)
+  {
+    vol = vol2;
+  }
+  else
+  {
+    vol2 = vol;
+  }
   Serial.print(vol);
   Serial.println(" cm");
   displayLcd();
@@ -534,7 +542,7 @@ void displayLcd()
   lcd.print(reservoir_temp, 1);
   lcd.print((char)223);
   lcd.print("C");
-  delay(5000);
+  // delay(5000);
   //  lcd.clear();
 }
 /************************ End of Display ***************************/
