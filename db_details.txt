@@ -1,0 +1,23 @@
+DB smartgh_pemantauan
+
+	tabel moni
+		no		bigint(20)	AI			primary
+		sn		varchar(20)	latin1_swedish_ci	
+		dgw		date		
+		tgw		time
+		date_server	date
+		time_server	time
+		delay_gw_server	mediumint(9)
+	tabel moni_detail
+		no		bigint(20)	AI			primary
+		id		mediumint(9)	
+		sensor		varchar(30)	latin1_swedish_ci
+			variabel sensor
+				humidity
+				temperature
+				cahaya
+				reservoir_temp
+				distance
+				TDS
+				pH
+		nilai		varchar(50)	latin1_swedish_ci

@@ -1,0 +1,41 @@
+1. sudo apt install -y mosquitto mosquitto-clients
+2. sudo systemctl enable mosquitto.service
+3. sudo apt-get update
+4. sudo apt-get upgrade
+5. sudo apt install mariadb-server
+6. sudo mysql_secure_installation
+7. insert root as root's passwd
+8. sudo mysql -uroot -p
+9. CREATE DATABASE smartgh_pemantauan;
+10. GRANT ALL PRIVILEGES ON <dbname>.* TO '<username>'@'localhost';
+11. FLUSH PRIVILEGES;
+12. sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
+	type above to check mariadb configuration. don't ever change that.
+13. sudo apt install -y phpmyadmin
+14. choose apache2 (press space and enter), when db-common choice, choose no
+15. check to raspi ip/phpmyadmin
+16. if its failed, try uninstall phpmyadmin
+	sudo apt-get -f install
+	sudo dpkg -P phpmyadmin  
+	sudo rm -vf /etc/apache2/conf.d/phpmyadmin.conf
+	sudo rm -vfR /usr/share/phpmyadmin
+	sudo service apache2 restart
+17. sudo nano /lib/systemd/system/helloworld.service
+18. 
+[Unit]
+ Description=Hello World Service
+ After=multi-user.target
+
+ [Service]
+ Type=idle  
+ ExecStart=/usr/bin/python /home/pi/helloworld.py  
+ User=pi  
+
+ [Install]  
+ WantedBy=multi-user.target
+
+19. sudo chmod 644 /lib/systemd/system/helloworld.service
+20. sudo systemctl daemon-reload
+21. sudo systemctl start helloworld.service
+22. sudo systemctl enable helloworld.service
+23. sudo systemctl status helloworld.service
