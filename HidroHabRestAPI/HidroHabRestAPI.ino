@@ -118,8 +118,8 @@ void setup()
 
   // Give name & ID to the device (ID should be 6 characters long)
   rest.set_id("1");
-  rest.set_name("HabBandungan");
-  Serial.println("REST ID = 1 & NAME = HabBandungan");
+  rest.set_name("Set Your REST name");
+  Serial.println("REST ID = 1 & NAME = Your REST name");
   // Start the server
   server.begin();
   Serial.println("Server started");
@@ -228,6 +228,12 @@ void loop()
   relay(1, 1, 1);
   delay(1000);
 
+  /*
+  Here is code to send data to server db
+  You have to specify your link and API to make sure the data is sent to server db
+  Use your own link and API, so data can be sent.
+  */
+
   String sensor1 = "cahaya";
   String sensor2 = "temperature";
   String sensor3 = "humidity";
@@ -236,10 +242,12 @@ void loop()
   String sensor6 = "reservoir_temp";
   String sensor7 = "pH";
 
+  //This is my API, use your own API here
   String postData = (String) "&sn=" + sn.c_str() + "&dgw=" + tanggal.c_str() + "&tgw=" + waktu.c_str() + "&sensor=" + sensor1 + "x" + sensor2 + "x" + sensor3 + "x" + sensor4 + "x" + sensor5 + "x" + sensor6 + "x" + sensor7 + "&nilai=" + lux + "x" + temperature + "x" + hum + "x" + vol + "x" + ecValue + "x" + reservoir_temp + "x" + phValue;
 
   HTTPClient http;
-  http.begin("http://www.smart-gh.com/input.php?sn=2020110001" + postData);
+  //Send data to server db with REST API
+  http.begin("your url here" + postData);
   http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
   auto httpCode = http.POST(postData);
