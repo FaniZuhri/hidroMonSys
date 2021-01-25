@@ -123,6 +123,7 @@ void setup()
   // Start the server
   server.begin();
   Serial.println("Server started");
+  lcd.clear();
 }
 
 void loop()

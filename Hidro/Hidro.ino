@@ -108,6 +108,7 @@ void setup()
   }
 
   SHT2x.begin();
+  lcd.clear();
 }
 
 void loop()
