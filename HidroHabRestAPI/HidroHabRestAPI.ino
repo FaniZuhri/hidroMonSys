@@ -51,7 +51,7 @@ SHT2x SHT2x;
 WiFiClient espClient;
 WiFiServer server(80);
 
-float phValue = 0, phValue2 = 0, reservoir_temp, tdsValue, hum, vol, vol2 = 0, ecValue, voltage, voltage1, temperature, temp = 25;
+float phValue = 0, lastpH = 0, phValueAvg, reservoir_temp, tdsValue, hum, vol, vol2 = 0, ecValue, ecValueAvg, lastEc, voltage, voltage1, temperature, temp = 25;
 int pHrelaypin = 33, TDSrelaypin = 25, samplingrelay = 26, pomparelay = 33, i = 1, lux;
 
 //Temperature chip i/o
@@ -89,6 +89,8 @@ void setup()
   ec.begin();
   //by default lib store calibration k since 10 change it by set ec.begin(30); to start from 30
   ads.setGain(GAIN_ONE);
+
+  // coba kasi address pada i2c ads.begin() dicari pake i2c scanner
   ads.begin();
 
   sensors.begin(); //DS18B20 start
@@ -105,6 +107,7 @@ void setup()
     Serial.println(F("Error initialising BH1750"));
   }
 
+  // coba kasi address pada i2c SHT2x.begin() dicari pake i2c scanner
   SHT2x.begin();
 
   // Init variables and expose them to REST API
@@ -118,8 +121,8 @@ void setup()
 
   // Give name & ID to the device (ID should be 6 characters long)
   rest.set_id("1");
-  rest.set_name("Set Your REST name");
-  Serial.println("REST ID = 1 & NAME = Your REST name");
+  rest.set_name("HabBandungan");
+  Serial.println("REST ID = 1 & NAME = HabBandungan");
   // Start the server
   server.begin();
   Serial.println("Server started");
@@ -171,8 +174,27 @@ void loop()
       Serial.print(temp, 1);
       Serial.println("^C");
 
-      ecValue = ec.readEC(voltage1, temp); // convert voltage to EC with temperature compensation
+      // coba ganti temp dengan reservoir_temp
+      ecValue = ec.readEC(voltage1, reservoir_temp); // convert voltage to EC with temperature compensation
       ecValue = (ecValue * 500) / 2;
+      if (ecValue >= 3000 || ecValue <= 500)
+      {
+        ecValue = lastEc;
+      }
+      else
+      {
+        lastEc = ecValue;
+      }
+      //get average pH Value from 25th to 40th measurement
+      if (i >= 25)
+      {
+        ecValueAvg += ecValue;
+        ecValue = ecValueAvg / (i - 24);
+        if (ecValue <= 3000 && ecValue >= 500)
+        {
+          lastEc = ecValue;
+        }
+      }
       Serial.print("EC:");
       Serial.print(ecValue, 4);
       Serial.println("us/cm");
@@ -187,6 +209,7 @@ void loop()
   relay(1, 1, 1);
   delay(20000);
 
+  //PH
   relay(0, 1, 1);
   delay(1000);
   i = 1;
@@ -206,15 +229,26 @@ void loop()
       Serial.print("voltage:");
       Serial.println(voltage, 0);
 
+      // coba ganti temp dengan reservoir_temp
       phValue = ph.readPH(voltage, temp); // convert voltage to pH with temperature compensation
-      phValue = phValue + 0.8;
-      if (phValue >= 8)
+                                          //      phValue = phValue + 0.8;
+      if (phValue >= 8 || phValue <= 4)
       {
-        phValue = phValue2;
+        phValue = lastpH;
       }
       else
       {
-        phValue2 = phValue;
+        lastpH = phValue;
+      }
+      //get average pH Value from 25th to 40th measurement
+      if (i >= 25)
+      {
+        phValueAvg += phValue;
+        phValue = phValueAvg / (i - 24);
+        if (phValue <= 8 && phValue >= 4)
+        {
+          lastpH = phValue;
+        }
       }
       Serial.print("pH:");
       Serial.println(phValue, 4);
@@ -228,12 +262,10 @@ void loop()
   relay(1, 1, 1);
   delay(1000);
 
-  /*
-  Here is code to send data to server db
-  You have to specify your link and API to make sure the data is sent to server db
-  Use your own link and API, so data can be sent.
-  */
-
+  phValueAvg = 0;
+  ecValueAvg = 0;
+  timestamp();
+  delay(100);
   String sensor1 = "cahaya";
   String sensor2 = "temperature";
   String sensor3 = "humidity";
@@ -242,11 +274,12 @@ void loop()
   String sensor6 = "reservoir_temp";
   String sensor7 = "pH";
 
-  //This is my API, use your own API here
+  // Here is my API, use your own API
   String postData = (String) "&sn=" + sn.c_str() + "&dgw=" + tanggal.c_str() + "&tgw=" + waktu.c_str() + "&sensor=" + sensor1 + "x" + sensor2 + "x" + sensor3 + "x" + sensor4 + "x" + sensor5 + "x" + sensor6 + "x" + sensor7 + "&nilai=" + lux + "x" + temperature + "x" + hum + "x" + vol + "x" + ecValue + "x" + reservoir_temp + "x" + phValue;
 
   HTTPClient http;
-  //Send data to server db with REST API
+
+  // Insert your http link below
   http.begin("your url here" + postData);
   http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
@@ -375,6 +408,10 @@ void readSHT()
 {
 
   hum = SHT2x.GetHumidity();
+  if (hum >= 90)
+  {
+    hum = 90;
+  }
   temperature = SHT2x.GetTemperature();
 
   Serial.print("Humidity(%RH): ");
@@ -427,7 +464,7 @@ void read_JSN()
   // Send ping, get distance in cm and print result (0 = outside set distance range):
   vol = sonar.ping_cm();
   vol = 120 - vol;
-  if (vol >= 120)
+  if (vol >= 120 || vol <= 40)
   {
     vol = vol2;
   }
