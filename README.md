@@ -1,4 +1,4 @@
-# habPrivate
+# hidroMonSys
 
 hidroMonSys was made for Hydroponic Monitoring System based on ESP32. There are some parameters that measured through sensors :
 
